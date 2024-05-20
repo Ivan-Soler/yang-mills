@@ -484,9 +484,9 @@ void calcstaples_for_higgs(Gauge_Conf *GC,
                            Geometry const * const geo,
                            long r,
                            GAUGE_VECS *staple);
-void overrelaxation_for_higgs(Gauge_Conf *GC,
+int overrelaxation_for_higgs(Gauge_Conf *GC,
                               Geometry const * const geo,
-                              long r);
+                              long r, GParam const * const param);
 int metropolis_for_higgs(Gauge_Conf *GC,
                          Geometry const * const geo,
                          GParam const * const param,
@@ -494,7 +494,7 @@ int metropolis_for_higgs(Gauge_Conf *GC,
 void update_with_higgs(Gauge_Conf * GC,
                        Geometry const * const geo,
                        GParam const * const param,
-                       double *acc);
+                       double *acc, double *accao);
 
 
 #endif

@@ -278,7 +278,7 @@ void update_for_multilevel_with_higgs(Gauge_Conf * GC,
               }
             if((t % param->d_ml_step[level])!=0)
               {
-              overrelaxation_for_higgs(GC, geo, r);
+              overrelaxation_for_higgs(GC, geo, r, param);
               }
             }
 
@@ -297,7 +297,7 @@ void update_for_multilevel_with_higgs(Gauge_Conf * GC,
               }
             if((t % param->d_ml_step[level])!=0)
               {
-              overrelaxation_for_higgs(GC, geo, r);
+              overrelaxation_for_higgs(GC, geo, r,param);
               }
             }
          }

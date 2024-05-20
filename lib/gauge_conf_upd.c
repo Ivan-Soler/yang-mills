@@ -1465,11 +1465,23 @@ void calcstaples_for_higgs(Gauge_Conf *GC,
      }
   }
 
+// Compute the quartic interaction for higgs
+inline double calcquartic_for_higgs(Su2Vecs* vec)
+	{
+  FMatrix fmatrix;
+  double interaction;
+		init_FMatrix_Su2Vecs(&fmatrix, vec);
+		FMatrix fmatrix_temp;
+		equal_FMatrix(&fmatrix_temp, &fmatrix);
+		times_equal_FMatrix(&fmatrix, &fmatrix_temp);
+		interaction=retr_FMatrix(&fmatrix);
+		return interaction;
+	}
 
 // perform an update of the higgs field with overrelaxation
-void overrelaxation_for_higgs(Gauge_Conf *GC,
+int overrelaxation_for_higgs(Gauge_Conf *GC,
                               Geometry const * const geo,
-                              long r)
+                              long r, GParam const * const param)
   {
   #ifdef DEBUG
   if(r >= geo->d_volume)
@@ -1479,13 +1491,32 @@ void overrelaxation_for_higgs(Gauge_Conf *GC,
     }
   #endif
 
+  int acc;
+  acc=0;
   GAUGE_VECS staple;
+  double old_energy, new_energy;
 
   calcstaples_for_higgs(GC, geo, r, &staple);
 
-  single_overrelaxation_vecs(&(GC->higgs[r]), &staple);
-
+  if (fabs(param->d_higgs_quartic)>MIN_VALUE)
+  	{
+  		GAUGE_VECS vec;
+  		equal_vecs(&vec, &(GC->higgs[r]));
+  		single_overrelaxation_vecs(&vec, &staple);
+  		old_energy=param->d_higgs_quartic/4*calcquartic_for_higgs(&(GC->higgs[r]));
+  		new_energy=param->d_higgs_quartic/4*calcquartic_for_higgs(&vec);
+  		if(casuale()< exp(old_energy-new_energy))
+  		         {
+  		         equal_vecs(&(GC->higgs[r]), &vec);
+  		         acc+=1;
+  	}
+  	}
+  	else{
+  			single_overrelaxation_vecs(&(GC->higgs[r]), &staple);
+  			acc+=1;
+  }
   normalize_vecs(&(GC->higgs[r]));
+  return acc;
   }
 
 
@@ -1509,6 +1540,7 @@ int metropolis_for_higgs(Gauge_Conf *GC,
   GAUGE_VECS staple, new_vector;
   GAUGE_GROUP identity_matrix, matrix, rnd_matrix;
 
+
   calcstaples_for_higgs(GC, geo, r, &staple);
 
   one(&identity_matrix);
@@ -1516,8 +1548,7 @@ int metropolis_for_higgs(Gauge_Conf *GC,
   acc=0;
   for(i=0; i<NHIGGS; i++)
      {
-     old_energy=-NHIGGS*param->d_higgs_beta*re_scal_prod_vecs(&(GC->higgs[r]), &staple);
-
+     old_energy=-NHIGGS*param->d_higgs_beta*re_scal_prod_vecs(&(GC->higgs[r]), &staple); //Recomputing all the action at r?
      j=(int)(NHIGGS*casuale()*(1.0 - MIN_VALUE));
 
      rand_matrix(&matrix);
@@ -1548,11 +1579,14 @@ int metropolis_for_higgs(Gauge_Conf *GC,
   for(i=0; i<NHIGGS; i++)
      {
      old_energy=-NHIGGS*param->d_higgs_beta*re_scal_prod_vecs(&(GC->higgs[r]), &staple);
+     if (fabs(param->d_higgs_quartic)>MIN_VALUE)
+     	old_energy=+param->d_higgs_quartic/4*calcquartic_for_higgs(&(GC->higgs[r]));
 
      equal_vecs(&new_vector, &(GC->higgs[r]));
      times_equal_complex_single_vecs(&new_vector, cexp(param->d_epsilon_metro*PI*(2.0*casuale()-1)*I), i);
      new_energy=-NHIGGS*param->d_higgs_beta*re_scal_prod_vecs(&new_vector, &staple);
-
+     if (fabs(param->d_higgs_quartic)>MIN_VALUE)
+     	new_energy=+param->d_higgs_quartic/4*calcquartic_for_higgs(&new_vector);
      if(casuale()< exp(old_energy-new_energy))
        {
        equal_vecs(&(GC->higgs[r]), &new_vector);
@@ -1568,6 +1602,8 @@ int metropolis_for_higgs(Gauge_Conf *GC,
     for(i=0; i<NHIGGS; i++)
        {
        old_energy=-NHIGGS*param->d_higgs_beta*re_scal_prod_vecs(&(GC->higgs[r]), &staple);
+       if (fabs(param->d_higgs_quartic)>MIN_VALUE)
+       	old_energy=+param->d_higgs_quartic/4*calcquartic_for_higgs(&(GC->higgs[r]));
 
        j=(int)(NHIGGS*casuale()*(1.0 - MIN_VALUE));
        k=(j+1 + (int)((NHIGGS-1)*casuale()*(1.0 - MIN_VALUE)) )% NHIGGS;
@@ -1577,7 +1613,8 @@ int metropolis_for_higgs(Gauge_Conf *GC,
        rotate_two_components_vecs(&new_vector, &(GC->higgs[r]), j, k, angle);
 
        new_energy=-NHIGGS*param->d_higgs_beta*re_scal_prod_vecs(&new_vector, &staple);
-
+       if (fabs(param->d_higgs_quartic)>MIN_VALUE)
+       	new_energy=+param->d_higgs_quartic/4*calcquartic_for_higgs(&new_vector);
        if(casuale()< exp(old_energy-new_energy))
          {
          equal_vecs(&(GC->higgs[r]), &new_vector);
@@ -1596,15 +1633,15 @@ int metropolis_for_higgs(Gauge_Conf *GC,
 void update_with_higgs(Gauge_Conf * GC,
                        Geometry const * const geo,
                        GParam const * const param,
-                       double *acc)
+                       double *acc, double *accov)
    {
    #ifdef THETA_MODE
     fprintf(stderr, "THETA_MODE not yet implemented in the higgs case, check everything (%s, %d)\n", __FILE__, __LINE__);
     exit(EXIT_FAILURE);
    #endif
 
-   int err, *a;
-   long r, asum;
+   int err, *a, *ao;
+   long r, asum, aosum;
    int j, dir;
 
    err=posix_memalign((void**)&a, (size_t)INT_ALIGN, (size_t) geo->d_volume * sizeof(int));
@@ -1614,8 +1651,16 @@ void update_with_higgs(Gauge_Conf * GC,
      exit(EXIT_FAILURE);
      }
 
+   err=posix_memalign((void**)&ao, (size_t)INT_ALIGN, (size_t) geo->d_volume * sizeof(int));
+   if(err!=0)
+     {
+     fprintf(stderr, "Problems in allocating a vector! (%s, %d)\n", __FILE__, __LINE__);
+     exit(EXIT_FAILURE);
+     }
+
    for(r=0; r<geo->d_volume; r++)
       {
+   			ao[r]=0;
       a[r]=0;
       }
 
@@ -1690,7 +1735,7 @@ void update_with_higgs(Gauge_Conf * GC,
       #endif
       for(r=0; r<(geo->d_volume)/2; r++)
          {
-         overrelaxation_for_higgs(GC, geo, r);
+         ao[r]+=overrelaxation_for_higgs(GC, geo, r, param);
          }
 
       #ifdef OPENMP_MODE
@@ -1698,7 +1743,7 @@ void update_with_higgs(Gauge_Conf * GC,
       #endif
       for(r=(geo->d_volume)/2; r<(geo->d_volume); r++)
          {
-         overrelaxation_for_higgs(GC, geo, r);
+         ao[r]+=overrelaxation_for_higgs(GC, geo, r, param);
          }
 
       // normalization for higgs is included in the update functions
@@ -1725,17 +1770,21 @@ void update_with_higgs(Gauge_Conf * GC,
 
    // acceptance computation
    asum=0;
+   aosum=0;
    #ifdef OPENMP_MODE
    #pragma omp parallel for reduction(+:asum) private(r)
    #endif
    for(r=0; r<geo->d_volume; r++)
       {
       asum+=(long)a[r];
+      aosum+=(long)ao[r];
       }
 
    *acc=((double)asum)*geo->d_inv_vol/(double)NHIGGS;
+   *accov=((double)aosum)*geo->d_inv_vol/(double)NHIGGS/param->d_overrelax;
 
    free(a);
+   free(ao);
 
    GC->update_index++;
    }

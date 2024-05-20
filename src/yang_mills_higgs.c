@@ -25,7 +25,7 @@ void real_main(char *in_file)
     GParam param;
 
     int count;
-    double acc, acc_local;
+    double acc, acc_local, accov, accov_local;
     FILE *datafilep;
     time_t time1, time2;
 
@@ -52,17 +52,18 @@ void real_main(char *in_file)
 
     // acceptance of the metropolis update
     acc=0.0;
-
+    accov=0.0;
     // montecarlo
     time(&time1);
     // count starts from 1 to avoid problems using %
     for(count=1; count < param.d_sample + 1; count++)
        {
-       update_with_higgs(&GC, &geo, &param, &acc_local);
+       update_with_higgs(&GC, &geo, &param, &acc_local, &accov_local);
 
        if(count>param.d_thermal)
          {
          acc+=acc_local;
+         accov+=accov_local;
          }
 
        if(count<param.d_thermal)

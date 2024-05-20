@@ -15,6 +15,7 @@ typedef struct GParam {
   double d_h[NCOLOR]; // parameters for the trace deformation
   double d_theta;
   double d_higgs_beta;
+  double d_higgs_quartic;
 
   // simulation details
   int d_sample;

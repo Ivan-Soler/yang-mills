@@ -80,6 +80,7 @@ void readinput(char *in_file, GParam *param)
     param->d_theta=0.0;
     param->d_mon_meas=0; // if =1 monopole measures are performed
     param->d_higgs_beta=0.0;
+    param->d_higgs_quartic=0.0;
 
     input=fopen(in_file, "r");  // open the input file
     if(input==NULL)
@@ -168,7 +169,16 @@ void readinput(char *in_file, GParam *param)
                     }
                   param->d_higgs_beta=temp_d;
                   }
-
+           else if(strncmp(str, "higgs_quartic",13)==0)
+            {
+            err=fscanf(input, "%lf", &temp_d);
+            if(err!=1)
+              {
+              fprintf(stderr, "Error in reading the file %s (%s, %d)\n", in_file, __FILE__, __LINE__);
+              exit(EXIT_FAILURE);
+              }
+            param->d_higgs_quartic=temp_d;
+            }
            else if(strncmp(str, "sample", 6)==0)
                   { 
                   err=fscanf(input, "%d", &temp_i);
@@ -786,7 +796,7 @@ void print_parameters_polycorr_higgs(GParam * param, time_t time_start, time_t t
       fprintf(fp, "theta: %.10lf\n", param->d_theta);
     #endif
     fprintf(fp, "higgs_beta: %.10lf\n", param->d_higgs_beta);
-
+    fprintf(fp, "higgs_quartic: %.10lf\n", param->d_higgs_quartic);
     fprintf(fp, "\n");
 
     fprintf(fp, "sample:    %d\n", param->d_sample);
@@ -950,6 +960,7 @@ void print_parameters_polycorr_higgs_long(GParam * param, time_t time_start, tim
       fprintf(fp, "theta: %.10lf\n", param->d_theta);
     #endif
     fprintf(fp, "higgs_beta: %.10lf\n", param->d_higgs_beta);
+    fprintf(fp, "higgs_quartic: %.10lf\n", param->d_higgs_quartic);
     fprintf(fp, "\n");
 
     fprintf(fp, "overrelax: %d\n", param->d_overrelax);
@@ -1540,7 +1551,8 @@ void print_parameters_higgs(GParam const * const param, time_t time_start, time_
     fprintf(fp, "\n\n");
 
     fprintf(fp, "beta:       %.10lf\n", param->d_beta);
-    fprintf(fp, "higgs_beta: %.10lf ", param->d_higgs_beta);
+    fprintf(fp, "higgs_beta: %.10lf\n", param->d_higgs_beta);
+    fprintf(fp, "higgs_quartic: %.10lf\n", param->d_higgs_quartic);
     fprintf(fp, "\n\n");
 
     fprintf(fp, "sample:    %d\n", param->d_sample);
