@@ -273,7 +273,18 @@ void readinput(char *in_file, GParam *param)
                     }
                   param->d_epsilon_metro=temp_d;
                   }
-
+           else if(strncmp(str, "epsilon_higgs_metro", 19)==0)
+                  {
+                  err=fscanf(input, "%lf", &temp_d);
+                  printf("epsilon readed %f, \n", temp_d);
+                  if(err!=1)
+                    {
+                    fprintf(stderr, "Error in reading the file %s (%s, %d)\n", in_file, __FILE__, __LINE__);
+                    exit(EXIT_FAILURE);
+                    }
+                  param->d_epsilon_higgs_metro=temp_d;
+                  printf("epsilon readed %f, \n", param->d_epsilon_metro);
+                  }
            else if(strncmp(str, "coolsteps", 9)==0)
                   {
                   err=fscanf(input, "%d", &temp_i);
@@ -811,6 +822,9 @@ void print_parameters_polycorr_higgs(GParam * param, time_t time_start, time_t t
 
     fprintf(fp, "epsilon_metro: %.10lf\n", param->d_epsilon_metro);
     fprintf(fp, "metropolis acceptance: %.10lf\n", acc);
+    fprintf(fp, "epsilon_higgs_metro: %.10lf\n", param->d_epsilon_higgs_metro);
+//    fprintf(fp, "metropolis higgs acceptance: %.10lf\n", acc_higgs)
+//    fprintf(fp, "overrelaxation acceptance: %.10lf\n", acc_ov);
     fprintf(fp, "\n");
 
     fprintf(fp, "multihit:   %d\n", param->d_multihit);
@@ -971,8 +985,12 @@ void print_parameters_polycorr_higgs_long(GParam * param, time_t time_start, tim
     fprintf(fp, "\n");
 
     fprintf(fp, "epsilon_metro: %.10lf\n", param->d_epsilon_metro);
-    fprintf(fp, "metropolis acceptance (different from zero only when the whole lattice is updated!): %.10lf\n", acc);
+    fprintf(fp, "metropolis acceptance: %.10lf\n", acc);
+    fprintf(fp, "epsilon_higgs_metro: %.10lf\n", param->d_epsilon_higgs_metro);
+//    fprintf(fp, "metropolis higgs acceptance: %.10lf\n", acc_higgs)
+//    fprintf(fp, "overrelaxation acceptance: %.10lf\n", acc_ov);
     fprintf(fp, "\n");
+
 
     fprintf(fp, "multihit:   %d\n", param->d_multihit);
     fprintf(fp, "levels for multileves: %d\n", NLEVELS);
@@ -1176,6 +1194,9 @@ void print_parameters_tracedef(GParam const * const param, time_t time_start, ti
 
     fprintf(fp, "epsilon_metro: %.10lf\n", param->d_epsilon_metro);
     fprintf(fp, "metropolis acceptance: %.10lf\n", acc);
+    fprintf(fp, "epsilon_higgs_metro: %.10lf\n", param->d_epsilon_higgs_metro);
+//    fprintf(fp, "metropolis higgs acceptance: %.10lf\n", acc_higgs)
+//    fprintf(fp, "overrelaxation acceptance: %.10lf\n", acc_ov);
     fprintf(fp, "\n");
 
     fprintf(fp, "coolsteps:      %d\n", param->d_coolsteps);
@@ -1524,7 +1545,7 @@ void print_parameters_tube_conn_long(GParam * param, time_t time_start, time_t t
     }
 
 // print simulation parameters for the higgs case
-void print_parameters_higgs(GParam const * const param, time_t time_start, time_t time_end, double acc)
+void print_parameters_higgs(GParam const * const param, time_t time_start, time_t time_end, double acc, double acc_higgs, double acc_ov)
     {
     FILE *fp;
     int i;
@@ -1567,7 +1588,11 @@ void print_parameters_higgs(GParam const * const param, time_t time_start, time_
 
     fprintf(fp, "epsilon_metro: %.10lf\n", param->d_epsilon_metro);
     fprintf(fp, "metropolis acceptance: %.10lf\n", acc);
+    fprintf(fp, "epsilon_higgs_metro: %.10lf\n", param->d_epsilon_higgs_metro);
+    fprintf(fp, "metropolis higgs acceptance: %.10lf\n", acc_higgs);
+    fprintf(fp, "overrelaxation acceptance: %.10lf\n", acc_ov);
     fprintf(fp, "\n");
+
 
     fprintf(fp, "randseed: %u\n", param->d_randseed);
     fprintf(fp, "\n");

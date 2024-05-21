@@ -487,14 +487,16 @@ void calcstaples_for_higgs(Gauge_Conf *GC,
 int overrelaxation_for_higgs(Gauge_Conf *GC,
                               Geometry const * const geo,
                               long r, GParam const * const param);
-int metropolis_for_higgs(Gauge_Conf *GC,
+void metropolis_for_higgs(Gauge_Conf *GC,
                          Geometry const * const geo,
                          GParam const * const param,
-                         long r);
+                         long r, int *acc, int *acc_higgs);
+void random_su2_flav(Su2Vecs* vec,
+																									int const flava);
 void update_with_higgs(Gauge_Conf * GC,
                        Geometry const * const geo,
                        GParam const * const param,
-                       double *acc, double *accao);
+                       double *acc, double *acc_higgs, double *acc_ov);
 
 
 #endif

@@ -218,7 +218,8 @@ void update_for_multilevel_with_higgs(Gauge_Conf * GC,
       #endif
       for(r=0; r<(geo->d_volume)/2; r++)
          {
-         int t, acc;
+         int t;
+         int acc, acc_higgs;
          long rsp;
 
          si_to_sisp_and_t(&rsp, &t, geo, r);
@@ -228,8 +229,9 @@ void update_for_multilevel_with_higgs(Gauge_Conf * GC,
            }
          if((t % param->d_ml_step[level])!=0)
            {
-           acc=metropolis_for_higgs(GC, geo, param, r);
+           metropolis_for_higgs(GC, geo, param, r, &acc, &acc_higgs);
            (void) acc; // just to avoid warning at compile time
+           (void) acc_higgs;
            }
          }
 
@@ -238,7 +240,8 @@ void update_for_multilevel_with_higgs(Gauge_Conf * GC,
       #endif
       for(r=(geo->d_volume)/2; r<(geo->d_volume); r++)
          {
-         int t, acc;
+         int t;
+         int acc, acc_higgs;
          long rsp;
 
          si_to_sisp_and_t(&rsp, &t, geo, r);
@@ -248,8 +251,9 @@ void update_for_multilevel_with_higgs(Gauge_Conf * GC,
            }
          if((t % param->d_ml_step[level])!=0)
            {
-           acc=metropolis_for_higgs(GC, geo, param, r);
+           metropolis_for_higgs(GC, geo, param, r, &acc, &acc_higgs);
            (void) acc; // just to avoid warning at compile time
+           (void) acc_higgs;
            }
          }
       }
@@ -269,16 +273,18 @@ void update_for_multilevel_with_higgs(Gauge_Conf * GC,
          for(r=0; r<(geo->d_volume)/2; r++)
             {
             int t;
+            int acc_ov;
             long rsp;
 
             si_to_sisp_and_t(&rsp, &t, geo, r);
             if((t % param->d_ml_step[level])!=0 || dir==0)
               {
-              overrelaxation_with_higgs(GC, geo, param, r, dir);
+            		overrelaxation_with_higgs(GC, geo, param, r, dir);
               }
             if((t % param->d_ml_step[level])!=0)
               {
-              overrelaxation_for_higgs(GC, geo, r, param);
+            		acc_ov=overrelaxation_for_higgs(GC, geo, r, param);
+            		(void) acc_ov; // just to avoid warning at compile time
               }
             }
 
@@ -288,6 +294,7 @@ void update_for_multilevel_with_higgs(Gauge_Conf * GC,
          for(r=(geo->d_volume)/2; r<(geo->d_volume); r++)
             {
             int t;
+            int acc_ov;
             long rsp;
 
             si_to_sisp_and_t(&rsp, &t, geo, r);
@@ -297,7 +304,8 @@ void update_for_multilevel_with_higgs(Gauge_Conf * GC,
               }
             if((t % param->d_ml_step[level])!=0)
               {
-              overrelaxation_for_higgs(GC, geo, r,param);
+              acc_ov=overrelaxation_for_higgs(GC, geo, r, param);
+              (void) acc_ov; // just to avoid warning at compile time
               }
             }
          }

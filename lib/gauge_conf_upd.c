@@ -1491,8 +1491,8 @@ int overrelaxation_for_higgs(Gauge_Conf *GC,
     }
   #endif
 
-  int acc;
-  acc=0;
+  int acc_ov;
+  acc_ov=0;
   GAUGE_VECS staple;
   double old_energy, new_energy;
 
@@ -1505,27 +1505,29 @@ int overrelaxation_for_higgs(Gauge_Conf *GC,
   		single_overrelaxation_vecs(&vec, &staple);
   		old_energy=param->d_higgs_quartic/4*calcquartic_for_higgs(&(GC->higgs[r]));
   		new_energy=param->d_higgs_quartic/4*calcquartic_for_higgs(&vec);
+  		//printf("Pre over Energy %f After over Energy %f \n",old_energy, new_energy);
   		if(casuale()< exp(old_energy-new_energy))
   		         {
+  											//printf("accepted overrelaxation step \n");
   		         equal_vecs(&(GC->higgs[r]), &vec);
-  		         acc+=1;
+  		         acc_ov+=1;
   	}
   	}
   	else{
   			single_overrelaxation_vecs(&(GC->higgs[r]), &staple);
-  			acc+=1;
+  			acc_ov+=1;
   }
   normalize_vecs(&(GC->higgs[r]));
-  return acc;
+  return acc_ov;
   }
 
 
 // perform an update of the higgs field with metropolis
 // return the number of accepted moves (from 0 to NHIGGS)
-int metropolis_for_higgs(Gauge_Conf *GC,
+void metropolis_for_higgs(Gauge_Conf *GC,
                          Geometry const * const geo,
                          GParam const * const param,
-                         long r)
+                         long r, int *acc, int *acc_higgs)
   {
   #ifdef DEBUG
   if(r >= geo->d_volume)
@@ -1535,17 +1537,18 @@ int metropolis_for_higgs(Gauge_Conf *GC,
     }
   #endif
 
-  int i, j, acc;
+  int i;
+  int j;
   double old_energy, new_energy;
   GAUGE_VECS staple, new_vector;
-  GAUGE_GROUP identity_matrix, matrix, rnd_matrix;
+  GAUGE_GROUP identity_matrix;
+  GAUGE_GROUP matrix, rnd_matrix;
 
 
   calcstaples_for_higgs(GC, geo, r, &staple);
 
   one(&identity_matrix);
 
-  acc=0;
   for(i=0; i<NHIGGS; i++)
      {
      old_energy=-NHIGGS*param->d_higgs_beta*re_scal_prod_vecs(&(GC->higgs[r]), &staple); //Recomputing all the action at r?
@@ -1571,61 +1574,78 @@ int metropolis_for_higgs(Gauge_Conf *GC,
      if(casuale()< exp(old_energy-new_energy))
        {
        equal_vecs(&(GC->higgs[r]), &new_vector);
-       acc+=1;
+       *acc+=1;
+       //printf("acceptance incremented %d, \n", *acc);
        }
      }
   normalize_vecs(&(GC->higgs[r]));
 
+
   for(i=0; i<NHIGGS; i++)
      {
+  			double angle;
      old_energy=-NHIGGS*param->d_higgs_beta*re_scal_prod_vecs(&(GC->higgs[r]), &staple);
-     if (fabs(param->d_higgs_quartic)>MIN_VALUE)
-     	old_energy=+param->d_higgs_quartic/4*calcquartic_for_higgs(&(GC->higgs[r]));
+     //printf("old kinetic %f, ", old_energy);
+
+     if (fabs(param->d_higgs_quartic)>MIN_VALUE){
+     //printf("old potential %f ", param->d_higgs_quartic/4*calcquartic_for_higgs(&(GC->higgs[r])));
+     //printf("old energy %f, \n", old_energy);
+     		old_energy+=param->d_higgs_quartic/4*calcquartic_for_higgs(&(GC->higgs[r]));}
 
      equal_vecs(&new_vector, &(GC->higgs[r]));
-     times_equal_complex_single_vecs(&new_vector, cexp(param->d_epsilon_metro*PI*(2.0*casuale()-1)*I), i);
+     angle=PI*param->d_epsilon_higgs_metro*(2.0*casuale()-1.0);
+     times_equal_complex_single_vecs(&new_vector, cexp(angle*I), i);
      new_energy=-NHIGGS*param->d_higgs_beta*re_scal_prod_vecs(&new_vector, &staple);
-     if (fabs(param->d_higgs_quartic)>MIN_VALUE)
-     	new_energy=+param->d_higgs_quartic/4*calcquartic_for_higgs(&new_vector);
+     //printf("new kinetic %f, ", new_energy);
+
+     if (fabs(param->d_higgs_quartic)>MIN_VALUE){
+     	//printf("new potential %f, ", param->d_higgs_quartic/4*calcquartic_for_higgs(&new_vector));
+     //printf("new energy %f, \n",new_energy);
+     		new_energy+=param->d_higgs_quartic/4*calcquartic_for_higgs(&new_vector);}
+
      if(casuale()< exp(old_energy-new_energy))
        {
        equal_vecs(&(GC->higgs[r]), &new_vector);
-       acc+=1;
+       *acc_higgs+=1;
        }
      }
 
   if(NHIGGS>1)
     {
-    int k;
+    int k,a,b;
     double angle;
 
     for(i=0; i<NHIGGS; i++)
        {
        old_energy=-NHIGGS*param->d_higgs_beta*re_scal_prod_vecs(&(GC->higgs[r]), &staple);
-       if (fabs(param->d_higgs_quartic)>MIN_VALUE)
-       	old_energy=+param->d_higgs_quartic/4*calcquartic_for_higgs(&(GC->higgs[r]));
-
+       //printf("old kinetic %f, ", old_energy);
+       if (fabs(param->d_higgs_quartic)>MIN_VALUE){
+       	//printf("old potential %f ", param->d_higgs_quartic/4*calcquartic_for_higgs(&(GC->higgs[r])));
+       //printf("old energy %f, \n", old_energy);
+       		old_energy+=param->d_higgs_quartic/4*calcquartic_for_higgs(&(GC->higgs[r]));}
        j=(int)(NHIGGS*casuale()*(1.0 - MIN_VALUE));
        k=(j+1 + (int)((NHIGGS-1)*casuale()*(1.0 - MIN_VALUE)) )% NHIGGS;
+       a=(int)(NCOLOR*casuale()*(1.0 - MIN_VALUE));
+       b=(a+1 + (int)((NCOLOR-1)*casuale()*(1.0 - MIN_VALUE)) )% NCOLOR;
 
-       angle=PI*param->d_epsilon_metro*(2.0*casuale()-1.0);
+       angle=PI*param->d_epsilon_higgs_metro*(2.0*casuale()-1.0);
 
-       rotate_two_components_vecs(&new_vector, &(GC->higgs[r]), j, k, angle);
+       rotate_colour_flavour_Su2Vecs(&new_vector, &(GC->higgs[r]), j, k, a, b, angle);
 
        new_energy=-NHIGGS*param->d_higgs_beta*re_scal_prod_vecs(&new_vector, &staple);
-       if (fabs(param->d_higgs_quartic)>MIN_VALUE)
-       	new_energy=+param->d_higgs_quartic/4*calcquartic_for_higgs(&new_vector);
+       //printf("new kinetic %f, ", new_energy);
+       if (fabs(param->d_higgs_quartic)>MIN_VALUE){
+       	//printf("new potential %f, ", param->d_higgs_quartic/4*calcquartic_for_higgs(&new_vector));
+      	//printf("new energy %f, \n",new_energy);
+        	new_energy+=param->d_higgs_quartic/4*calcquartic_for_higgs(&new_vector);}
        if(casuale()< exp(old_energy-new_energy))
          {
          equal_vecs(&(GC->higgs[r]), &new_vector);
-         acc+=1;
+         *acc_higgs+=1;
          }
        }
     normalize_vecs(&(GC->higgs[r]));
     }
-
-
-  return acc/3;
   }
 
 
@@ -1633,15 +1653,15 @@ int metropolis_for_higgs(Gauge_Conf *GC,
 void update_with_higgs(Gauge_Conf * GC,
                        Geometry const * const geo,
                        GParam const * const param,
-                       double *acc, double *accov)
+                       double *acc, double *acc_higgs, double *acc_ov)
    {
    #ifdef THETA_MODE
     fprintf(stderr, "THETA_MODE not yet implemented in the higgs case, check everything (%s, %d)\n", __FILE__, __LINE__);
     exit(EXIT_FAILURE);
    #endif
 
-   int err, *a, *ao;
-   long r, asum, aosum;
+   int err, *a, *ao, *ah;
+   long r, asum, aosum, ahsum;
    int j, dir;
 
    err=posix_memalign((void**)&a, (size_t)INT_ALIGN, (size_t) geo->d_volume * sizeof(int));
@@ -1658,10 +1678,18 @@ void update_with_higgs(Gauge_Conf * GC,
      exit(EXIT_FAILURE);
      }
 
+   err=posix_memalign((void**)&ah, (size_t)INT_ALIGN, (size_t) geo->d_volume * sizeof(int));
+   if(err!=0)
+     {
+     fprintf(stderr, "Problems in allocating a vector! (%s, %d)\n", __FILE__, __LINE__);
+     exit(EXIT_FAILURE);
+     }
+
    for(r=0; r<geo->d_volume; r++)
       {
-   			ao[r]=0;
       a[r]=0;
+      ah[r]=0;
+      ao[r]=0;
       }
 
    // heatbath on links
@@ -1755,7 +1783,7 @@ void update_with_higgs(Gauge_Conf * GC,
    #endif
    for(r=0; r<(geo->d_volume)/2; r++)
       {
-      a[r]+=metropolis_for_higgs(GC, geo, param, r);
+      metropolis_for_higgs(GC, geo, param, r, &a[r], &ah[r]);
       }
 
    #ifdef OPENMP_MODE
@@ -1763,28 +1791,32 @@ void update_with_higgs(Gauge_Conf * GC,
    #endif
    for(r=(geo->d_volume)/2; r<(geo->d_volume); r++)
       {
-      a[r]+=metropolis_for_higgs(GC, geo, param, r);
+      metropolis_for_higgs(GC, geo, param, r, &a[r], &ah[r]);
       }
 
    // normalization for higgs is included in the update functions
-
    // acceptance computation
    asum=0;
    aosum=0;
+   ahsum=0;
    #ifdef OPENMP_MODE
    #pragma omp parallel for reduction(+:asum) private(r)
    #endif
    for(r=0; r<geo->d_volume; r++)
       {
+   		 //printf("acceptance metro gauge step %d, \n", ao[r]);
       asum+=(long)a[r];
       aosum+=(long)ao[r];
+      ahsum+=(long)ah[r];
       }
-
+   printf("aosum %ld \n", aosum);
+   //printf("acceptance metro gauge %f, \n", *acc);
    *acc=((double)asum)*geo->d_inv_vol/(double)NHIGGS;
-   *accov=((double)aosum)*geo->d_inv_vol/(double)NHIGGS/param->d_overrelax;
-
+   *acc_ov=((double)aosum)*geo->d_inv_vol;
+   *acc_higgs=((double)ahsum)*geo->d_inv_vol/(double)NHIGGS/2;//Divided by two because the metropolis for higgs is done in two steps
    free(a);
    free(ao);
+   free(ah);
 
    GC->update_index++;
    }

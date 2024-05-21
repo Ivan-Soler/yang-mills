@@ -31,6 +31,7 @@ typedef struct GParam {
 
   // for metropolis
   double d_epsilon_metro;
+  double d_epsilon_higgs_metro;
 
   // for cooling in measures
   int d_coolsteps;
@@ -87,6 +88,6 @@ void print_parameters_tube_disc_long(GParam * param, time_t time_start, time_t t
 void print_parameters_tube_conn(GParam * param, time_t time_start, time_t time_end);
 void print_parameters_tube_conn_long(GParam * param, time_t time_start, time_t time_end);
 
-void print_parameters_higgs(GParam const * const param, time_t time_start, time_t time_end, double acc);
+void print_parameters_higgs(GParam const * const param, time_t time_start, time_t time_end,  double acc, double acc_higgs, double acc_ov);
 
 #endif

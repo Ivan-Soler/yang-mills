@@ -479,6 +479,13 @@ void rotate_two_components_Su2Vecs(Su2Vecs * restrict v1,
                                    int j,
                                    double angle);
 
+inline void rotate_colour_flavour_Su2Vecs(Su2Vecs * restrict v1,
+                                          Su2Vecs const * const restrict v2,
+                                          int i,
+                                          int j,
+                                          int a,
+                                          int b,
+                                          double angle);
 
 // tensor product of two vectors
 // Re(v1^{\dag} * aux * v2) = ReTr(aux * matrix)

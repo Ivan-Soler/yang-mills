@@ -25,7 +25,7 @@ void real_main(char *in_file)
     GParam param;
 
     int count;
-    double acc, acc_local, accov_local;
+    double acc, acc_local, acc_higgs_local, acc_ov_local;
     FILE *datafilep;
     time_t time1, time2;
 
@@ -72,7 +72,7 @@ void real_main(char *in_file)
       {
       for(count=0; count<param.d_measevery; count++)
          {
-         update_with_higgs(&GC, &geo, &param, &acc_local, &accov_local);
+      	 update_with_higgs(&GC, &geo, &param, &acc_local, &acc_higgs_local, &acc_ov_local);
          }
 
       if(count>param.d_thermal)
@@ -102,7 +102,7 @@ void real_main(char *in_file)
         {
         for(count=0; count<param.d_measevery; count++)
            {
-           update_with_higgs(&GC, &geo, &param, &acc_local, &accov_local);
+        		update_with_higgs(&GC, &geo, &param, &acc_local, &acc_higgs_local, &acc_ov_local);
            }
 
         if(count>param.d_thermal)

@@ -25,7 +25,7 @@ void real_main(char *in_file)
     GParam param;
 
     int count;
-    double acc, acc_local, accov, accov_local;
+    double acc, acc_local, acc_ov, acc_ov_local, acc_higgs, acc_higgs_local;
     FILE *datafilep;
     time_t time1, time2;
 
@@ -36,6 +36,7 @@ void real_main(char *in_file)
 
     // read input file
     readinput(in_file, &param);
+  		//printf("epsilon metro %f, \n", param.d_epsilon_higgs_metro);
 
     // initialize random generator
     initrand(param.d_randseed);
@@ -52,32 +53,48 @@ void real_main(char *in_file)
 
     // acceptance of the metropolis update
     acc=0.0;
-    accov=0.0;
+    acc_ov=0.0;
+    acc_higgs=0.0;
     // montecarlo
     time(&time1);
     // count starts from 1 to avoid problems using %
     for(count=1; count < param.d_sample + 1; count++)
        {
-       update_with_higgs(&GC, &geo, &param, &acc_local, &accov_local);
-
+       update_with_higgs(&GC, &geo, &param, &acc_local, &acc_higgs_local, &acc_ov_local);
+       //printf("acceptance local %f, \n", acc_local);
        if(count>param.d_thermal)
          {
          acc+=acc_local;
-         accov+=accov_local;
+         acc_ov+=acc_ov_local;
+         acc_higgs+=acc_higgs_local;
          }
-
+       //printf("count %d  thermal  %d, \n", count, param.d_thermal);
        if(count<param.d_thermal)
          {
          if(acc_local>0.33)
            {
+           //printf("acceptance local high %f, \n", acc_local);
            if(param.d_epsilon_metro<2.0)
              {
              param.d_epsilon_metro*=1.1;
+            // printf("epsilon metro increased %f, \n", param.d_epsilon_metro);
              }
            }
          else
            {
            param.d_epsilon_metro*=0.9;
+           //printf("epsilon metro decreased %f, \n", param.d_epsilon_metro);
+           }
+         if(acc_higgs_local>0.33)
+           {
+           if(param.d_epsilon_higgs_metro<1.0)
+             {
+             param.d_epsilon_higgs_metro*=1.1;
+             }
+           }
+         else
+           {
+           param.d_epsilon_higgs_metro*=0.9;
            }
          }
 
@@ -105,6 +122,11 @@ void real_main(char *in_file)
     // montecarlo end
 
     acc/=(double)(param.d_sample-param.d_thermal);
+    acc_higgs/=(double)(param.d_sample-param.d_thermal);
+    if (param.d_overrelax>MIN_VALUE)
+    		acc_ov/=(double)((param.d_sample-param.d_thermal)*param.d_overrelax);
+    else
+    		acc_ov=0;
 
     // close data file
     fclose(datafilep);
@@ -115,9 +137,9 @@ void real_main(char *in_file)
       write_conf_on_file(&GC, &geo, &param);
       write_higgs_on_file(&GC, &geo, &param);
       }
-
+    //printf("epsilon metro end %f, \n", param.d_epsilon_metro);
     // print simulation details
-    print_parameters_higgs(&param, time1, time2, acc);
+    print_parameters_higgs(&param, time1, time2, acc, acc_higgs, acc_ov);
 
     // free gauge configuration and higgs fields
     free_gauge_conf(&GC, &geo);

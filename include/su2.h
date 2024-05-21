@@ -1094,6 +1094,27 @@ inline void rotate_two_components_Su2Vecs(Su2Vecs * restrict v1,
      }
   }
 
+//rotate flavour and color of the vector
+inline void rotate_colour_flavour_Su2Vecs(Su2Vecs * restrict v1,
+                                          Su2Vecs const * const restrict v2,
+                                          int i,
+                                          int j,
+                                          int a,
+                                          int b,
+                                          double angle)
+  {
+  #ifdef __INTEL_COMPILER
+  __assume_aligned(&(v1->comp), DOUBLE_ALIGN);
+  __assume_aligned(&(v2->comp), DOUBLE_ALIGN);
+  #endif
+
+  equal_Su2Vecs(v1, v2);
+
+		v1->comp[4*i+a]= cos(angle)*v2->comp[4*i+a] + sin(angle)*v2->comp[4*j+b];
+		v1->comp[4*j+b]=-sin(angle)*v2->comp[4*i+a] + cos(angle)*v2->comp[4*j+b];
+
+  }
+
 
 // tensor product of two vectors
 // Re(v1^{\dag} * aux * v2) = ReTr(aux * matrix)
