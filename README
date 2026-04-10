@@ -1,4 +1,26 @@
-#******************************************************************************
+******************************************************************************
+***************************** ABOUT THIS FORK ********************************
+******************************************************************************
+This repository is a fork of the original Yang-Mills simulation codebase and
+is pinned to the version I worked on during the beginning of my postdoctoral 
+research.
+
+My contributions focused on:
+
+    Added the quartic coupling in metropolis for Higgs
+    
+    Added overrelaxation for the Higgs to reduce autocorrelations
+
+    Added quartic potential through Q**2 with a metropolis step that mixes 
+    flavour and colour components.
+
+Since the upstream project has evolved significantly, this fork preserves the
+development stage most representative of my work.
+
+Results were published in
+    Phys.Rev.E 112 (2025) 2, 024112
+    Phys.Rev.D 110 (2024) 9, 094504
+******************************************************************************
 ************ PROGRAM FOR SIMULATION OF LATTICE YANG-MILLS THEORIES ***********
 ******************************************************************************
 
